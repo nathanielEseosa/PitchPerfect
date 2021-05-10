@@ -17,6 +17,19 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
     @IBOutlet weak var stopRecordingButton: UIButton!
     
     var audioRecorder: AVAudioRecorder!
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        stopRecordingButton.isEnabled = false
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "stopRecording" {
+            let playSoundsVC = segue.destination as? PlaySoundsViewController
+            let recordedAudioURL = sender as? URL
+            playSoundsVC?.recordedAudioURL = recordedAudioURL
+        }
+    }
 
     // MARK: Actions
     
