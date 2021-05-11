@@ -14,13 +14,14 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
     
     @IBOutlet weak var recordButton: UIButton!
     @IBOutlet weak var recordingLabel: UILabel!
-    @IBOutlet weak var stopRecordingButton: UIButton!
     
     var audioRecorder: AVAudioRecorder!
+    var pulseLayers = [CAShapeLayer]()
+    var isRecording = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        stopRecordingButton.isEnabled = false
+        createPulse()
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -33,8 +34,18 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
 
     // MARK: Actions
     
-    @IBAction func recordAudio(_ sender: Any) {
-        setupUI(recording: true)
+    @IBAction func recordButtonPressed(_ sender: Any) {
+        isRecording = !isRecording
+        setupUI()
+        if isRecording {
+            startRecording()
+        } else {
+            stopRecording()
+        }
+    }
+    
+    func startRecording() {
+        setupUI()
         let dirPath = NSSearchPathForDirectoriesInDomains(.documentDirectory,.userDomainMask, true)[0] as String
         let recordingName = "recordedVoice.wav"
         let pathArray = [dirPath, recordingName]
@@ -50,24 +61,75 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
         audioRecorder.record()
     }
     
-    @IBAction func stopRecording(_ sender: Any) {
-        setupUI(recording: false)
+    func stopRecording() {
+        setupUI()
         audioRecorder.stop()
         let audioSession = AVAudioSession.sharedInstance()
         try! audioSession.setActive(false)
     }
     
-    func setupUI(recording: Bool) {
-        if recording {
+    
+    func setupUI() {
+        if isRecording {
             recordingLabel.text = "Recording in Progress"
-            stopRecordingButton.isEnabled = true
-            recordButton.isEnabled = false
+            recordButton.setImage(#imageLiteral(resourceName: "Stop"), for: .normal)
+            startPulesAnimation()
         } else {
             recordingLabel.text = "Tap to Record"
-            stopRecordingButton.isEnabled = false
             recordButton.isEnabled = true
+            recordButton.setImage(#imageLiteral(resourceName: "Record"), for: .normal)
+            stopPulseAnimation()
         }
     }
+    
+    // MARK: Pulse Animation Methods
+    
+    func createPulse() {
+            let circleInterval: CGFloat = 15
+            let micRadius = (recordButton.frame.size.width) - circleInterval
+            for circleNumber in 1 ... 3 {
+                let circleRadius: CGFloat = (micRadius / 2) + (circleInterval * CGFloat(circleNumber))
+                let circularPath = UIBezierPath(arcCenter: .zero, radius: circleRadius, startAngle: 0, endAngle: 2 * .pi, clockwise: true)
+                let pulseLayer = CAShapeLayer()
+                pulseLayer.path = circularPath.cgPath
+                pulseLayer.lineWidth = 3.0
+                pulseLayer.fillColor = UIColor.clear.cgColor
+                pulseLayer.strokeColor = UIColor(red: 0.4, green: 1.0, blue: 0.2, alpha: 0.5).cgColor
+                pulseLayer.lineCap = .round
+                pulseLayer.position = CGPoint(x: recordButton.frame.size.width/2, y: recordButton.frame.size.height/2)
+                pulseLayers.append(pulseLayer)
+            }
+        }
+    
+    func animatePulse(index: Int) {
+            let opacityAnim = CABasicAnimation(keyPath: #keyPath(CALayer.opacity))
+            opacityAnim.duration = 1.5
+            opacityAnim.fromValue = 0.9
+            opacityAnim.toValue = 0.0
+            opacityAnim.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            opacityAnim.repeatCount = .greatestFiniteMagnitude
+            pulseLayers[index].add(opacityAnim, forKey: "opacity")
+            self.recordButton.layer.addSublayer(pulseLayers[index])
+        }
+    
+    func startPulesAnimation() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self.animatePulse(index: 2)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.animatePulse(index: 1)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        self.animatePulse(index: 0)
+                    }
+                }
+            }
+        }
+    
+    func stopPulseAnimation() {
+            for (index, _) in self.pulseLayers.enumerated() {
+                pulseLayers[index].removeAllAnimations()
+                pulseLayers[index].removeFromSuperlayer()
+            }
+        }
     
     // MARK: Delegate Actions
     
