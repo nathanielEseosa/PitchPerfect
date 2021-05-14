@@ -36,7 +36,7 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
     
     @IBAction func recordButtonPressed(_ sender: Any) {
         isRecording = !isRecording
-        setupUI()
+        setupUI(isRecording)
         if isRecording {
             startRecording()
         } else {
@@ -45,7 +45,7 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
     }
     
     func startRecording() {
-        setupUI()
+        setupUI(isRecording)
         let dirPath = NSSearchPathForDirectoriesInDomains(.documentDirectory,.userDomainMask, true)[0] as String
         let recordingName = "recordedVoice.wav"
         let pathArray = [dirPath, recordingName]
@@ -62,24 +62,17 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
     }
     
     func stopRecording() {
-        setupUI()
+        setupUI(isRecording)
         audioRecorder.stop()
         let audioSession = AVAudioSession.sharedInstance()
         try! audioSession.setActive(false)
     }
     
     
-    func setupUI() {
-        if isRecording {
-            recordingLabel.text = "Recording in Progress"
-            recordButton.setImage(#imageLiteral(resourceName: "Stop"), for: .normal)
-            startPulesAnimation()
-        } else {
-            recordingLabel.text = "Tap to Record"
-            recordButton.isEnabled = true
-            recordButton.setImage(#imageLiteral(resourceName: "Record"), for: .normal)
-            stopPulseAnimation()
-        }
+    func setupUI(_ isRecording: Bool) {
+        isRecording ? startPulesAnimation() : stopPulseAnimation()
+        isRecording ? recordButton.setImage(#imageLiteral(resourceName: "Stop"), for: .normal) : recordButton.setImage(#imageLiteral(resourceName: "Record"), for: .normal)
+        recordingLabel.text = isRecording ? "Recording ..." : "Tap To Record"
     }
     
     // MARK: Pulse Animation Methods
